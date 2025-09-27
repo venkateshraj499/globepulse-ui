@@ -21,6 +21,7 @@ import {
   fetchStories,
   fetchStoryDetail,
 } from '../services/apiClient';
+import fallbackThumbnail from './homeFallbackThumb.svg';
 
 const CATEGORY_FALLBACK = [
   { id: 'all', label: 'All' },
@@ -804,6 +805,7 @@ const useStyles = makeStyles((theme) => ({
 
 const DEFAULT_POINT_OF_VIEW = { lat: 22, lng: 15, altitude: 2.2 };
 const PRIMARY_MARKER_COLOR = '#F97316';
+const FALLBACK_THUMBNAIL = fallbackThumbnail;
 
 const escapeTooltipText = (text) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -816,20 +818,37 @@ const escapeAttribute = (value) =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
+const resolveThumbnailUrl = (item) => {
+  if (!item) {
+    return FALLBACK_THUMBNAIL;
+  }
+
+  const candidate =
+    item.thumbnailUrl ?? item.thumbnail ?? item.imageUrl ?? item.image_url ?? '';
+
+  if (typeof candidate === 'string') {
+    const trimmed = candidate.trim();
+    return trimmed ? trimmed : FALLBACK_THUMBNAIL;
+  }
+
+  return FALLBACK_THUMBNAIL;
+};
+
 const buildTooltipMarkup = (marker) => {
   const safeCity = escapeTooltipText(marker.city);
   const safeHeadline = escapeTooltipText(marker.headline);
-  const thumbnailUrl =
-    marker.thumbnailUrl ?? marker.thumbnail ?? marker.imageUrl ?? marker.image_url ?? null;
-  const thumbnailMarkup = thumbnailUrl
-    ? `<div class="globe-tooltip-thumb"><img src="${escapeAttribute(
-        thumbnailUrl
-      )}" alt="Thumbnail for ${safeCity}" loading="lazy" /></div>`
-    : '';
+  const thumbnailUrl = resolveThumbnailUrl(marker);
+  const usingFallback = thumbnailUrl === FALLBACK_THUMBNAIL;
+  const altText = usingFallback
+    ? 'Default news thumbnail'
+    : `Thumbnail for ${safeCity}`;
+  const thumbnailMarkup = `<div class="globe-tooltip-thumb"><img src="${escapeAttribute(
+    thumbnailUrl
+  )}" alt="${escapeAttribute(altText)}" loading="lazy" /></div>`;
   const safeDescription = marker.description
     ? `<p>${escapeTooltipText(marker.description)}</p>`
     : '';
-  const rootClass = `globe-marker-tooltip${thumbnailMarkup ? ' has-thumb' : ''}`;
+  const rootClass = 'globe-marker-tooltip has-thumb';
 
   return `<div class="${rootClass}">${thumbnailMarkup}<div class="globe-tooltip-body"><strong>📍 ${safeCity}</strong><span>${safeHeadline}</span>${safeDescription}</div></div>`;
 };
@@ -1236,12 +1255,8 @@ const HomePage = () => {
   const selectedStoryCategoryLabel = selectedStory
     ? getCategoryLabel(selectedStory.category)
     : '';
-  const modalStoryThumbnail =
-    modalStory?.thumbnailUrl ??
-    modalStory?.thumbnail ??
-    modalStory?.imageUrl ??
-    modalStory?.image_url ??
-    null;
+  const modalStoryThumbnail = modalStory ? resolveThumbnailUrl(modalStory) : FALLBACK_THUMBNAIL;
+  const modalThumbnailIsFallback = modalStoryThumbnail === FALLBACK_THUMBNAIL;
 
   return (
     <Box className={classes.root}>
@@ -1472,8 +1487,8 @@ const HomePage = () => {
           ) : quickHeadlines.length ? (
             <Box className={classes.quickList}>
               {quickHeadlines.map((story, index) => {
-                const thumbnailUrl =
-                  story.thumbnailUrl ?? story.thumbnail ?? story.imageUrl ?? story.image_url ?? null;
+                const thumbnailUrl = resolveThumbnailUrl(story);
+                const usingFallback = thumbnailUrl === FALLBACK_THUMBNAIL;
 
                 return (
                   <Box key={story.id} className={classes.quickListItem}>
@@ -1481,9 +1496,16 @@ const HomePage = () => {
                       <Box
                         component="img"
                         src={thumbnailUrl}
-                        alt={`${story.city} headline thumbnail`}
+                        alt={usingFallback ? 'Default news thumbnail' : `${story.city} headline thumbnail`}
                         loading="lazy"
                         className={classes.quickThumbnail}
+                        onError={(event) => {
+                          if (event.currentTarget.dataset.fallbackApplied === 'true') {
+                            return;
+                          }
+                          event.currentTarget.dataset.fallbackApplied = 'true';
+                          event.currentTarget.src = FALLBACK_THUMBNAIL;
+                        }}
                       />
                     )}
                     <Box className={classes.quickListContent}>
@@ -1547,9 +1569,16 @@ const HomePage = () => {
                   <Box
                     component="img"
                     src={modalStoryThumbnail}
-                    alt={`${modalStory.city} headline thumbnail`}
+                    alt={modalThumbnailIsFallback ? 'Default news thumbnail' : `${modalStory.city} headline thumbnail`}
                     loading="lazy"
                     className={classes.dialogThumbnail}
+                    onError={(event) => {
+                      if (event.currentTarget.dataset.fallbackApplied === 'true') {
+                        return;
+                      }
+                      event.currentTarget.dataset.fallbackApplied = 'true';
+                      event.currentTarget.src = FALLBACK_THUMBNAIL;
+                    }}
                   />
                 )}
                 {modalStory.description && (
