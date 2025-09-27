@@ -148,8 +148,16 @@ const useStyles = makeStyles((theme) => ({
     width: '100%',
     maxWidth: 420,
   },
-  citySelectorLabel: {
+  citySelectorHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing(1.5),
+    flexWrap: 'wrap',
     marginBottom: `${theme.spacing(1.4)} !important`,
+  },
+  citySelectorLabel: {
+    margin: 0,
     fontWeight: 700,
     fontSize: 15,
     color: '#0F172A',
@@ -346,13 +354,7 @@ const useStyles = makeStyles((theme) => ({
     whiteSpace: 'nowrap',
     width: 1,
   },
-  footer: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: `${theme.spacing(6)} !important`,
-  },
   flashButton: {
-    marginTop: `${theme.spacing(2)} !important`,
     padding: theme.spacing(1.4, 3.6),
     borderRadius: 14,
     backgroundColor: '#070C1A',
@@ -944,7 +946,25 @@ const HomePage = () => {
 
         <Box className={classes.hero}>
           <Box className={classes.citySelectorWrapper}>
-            <Typography className={classes.citySelectorLabel}>Jump to a city</Typography>
+            <Box className={classes.citySelectorHeader}>
+              <Typography className={classes.citySelectorLabel}>Jump to a city</Typography>
+              <Button
+                className={classes.flashButton}
+                variant="contained"
+                disableElevation
+                onClick={handleOpenQuickDialog}
+                disabled={isQuickLoading}
+              >
+                {isQuickLoading ? (
+                  <span className={classes.quickButtonContent}>
+                    <CircularProgress size={18} sx={{ color: '#F8FAFC' }} />
+                    Loading…
+                  </span>
+                ) : (
+                  '⚡ Quick 10 Headlines'
+                )}
+              </Button>
+            </Box>
             <Autocomplete
               fullWidth
               disableClearable
@@ -1085,25 +1105,6 @@ const HomePage = () => {
               Updating global headlines…
             </Typography>
           )}
-        </Box>
-
-        <Box className={classes.footer}>
-          <Button
-            className={classes.flashButton}
-            variant="contained"
-            disableElevation
-            onClick={handleOpenQuickDialog}
-            disabled={isQuickLoading}
-          >
-            {isQuickLoading ? (
-              <span className={classes.quickButtonContent}>
-                <CircularProgress size={18} sx={{ color: '#F8FAFC' }} />
-                Loading…
-              </span>
-            ) : (
-              '⚡ Quick 10 Headlines'
-            )}
-          </Button>
         </Box>
       </Box>
 
