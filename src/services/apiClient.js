@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://globepulse-backend.onrender.com/api/v1';
 const TEMP_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mocked.payload.signature';
 
 const defaultHeaders = () => ({
@@ -62,4 +62,3 @@ export const fetchQuickStories = ({ category = 'all', limit = 10 } = {}) =>
 
 export const fetchFlashStories = ({ category = 'all' } = {}) =>
   request(`/news/stories/flash${buildQueryString({ category })}`);
-
