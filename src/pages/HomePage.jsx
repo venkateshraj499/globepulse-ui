@@ -34,6 +34,17 @@ const CATEGORY_FALLBACK = [
 
 const useStyles = makeStyles((theme) => ({
   '@global': {
+    'html, body': {
+      overflowX: 'hidden',
+      width: '100%',
+    },
+    body: {
+      margin: 0,
+    },
+    '#root': {
+      width: '100%',
+      overflowX: 'hidden',
+    },
     '.globe-marker-tooltip': {
       padding: '10px 14px',
       background: 'rgba(15, 23, 42, 0.88)',
@@ -100,6 +111,8 @@ const useStyles = makeStyles((theme) => ({
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
+    overflowX: 'hidden',
     background: 'radial-gradient(circle at top, #EEF2FF 0%, #F5F7FB 38%, #E2E8F0 100%)',
     padding: theme.spacing(4, 0, 6),
     [theme.breakpoints.down('sm')]: {
@@ -135,7 +148,6 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down(420)]: {
       padding: theme.spacing(2.4, 1.8, 3.5),
       borderRadius: 18,
-      margin: theme.spacing(0, 1.5),
       boxShadow: '0 20px 40px -32px rgba(15, 23, 42, 0.28)',
     },
   },
@@ -291,6 +303,13 @@ const useStyles = makeStyles((theme) => ({
     marginTop: `${theme.spacing(1.2)} !important`,
     boxShadow: '0px 42px 80px -36px rgba(30, 41, 59, 0.45)',
     border: '1px solid rgba(148, 163, 184, 0.2)',
+    width: '100%',
+    maxWidth: 420,
+    [theme.breakpoints.down('sm')]: {
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      maxWidth: 'calc(100vw - 24px)',
+    },
   },
   citySelectorListbox: {
     padding: `${theme.spacing(1.2, 0.8, 1.4)} !important`,
@@ -1331,6 +1350,18 @@ const HomePage = () => {
                 paper: classes.citySelectorPaper,
                 listbox: classes.citySelectorListbox,
               }}
+              slotProps={{
+                popper: {
+                  modifiers: [
+                    { name: 'preventOverflow', options: { padding: 12 } },
+                    { name: 'flip', options: { padding: 12 } },
+                  ],
+                  style: {
+                    width: '100%',
+                    maxWidth: 'calc(100vw - 24px)',
+                  },
+                },
+              }}
               ListboxProps={{
                 onScroll: (event) => {
                   const list = event.currentTarget;
@@ -1462,7 +1493,7 @@ const HomePage = () => {
           sx: {
             borderRadius: 8,
             width: '100%',
-            maxWidth: 760,
+            maxWidth: { xs: 'calc(100vw - 24px)', sm: 760 },
             background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 90%)',
             boxShadow: '0 48px 90px -40px rgba(15, 23, 42, 0.55)',
             border: '1px solid rgba(226, 232, 240, 0.9)',
@@ -1550,7 +1581,7 @@ const HomePage = () => {
           sx: {
             borderRadius: 8,
             padding: 2.5,
-            maxWidth: 480,
+            maxWidth: { xs: 'calc(100vw - 24px)', sm: 480 },
             background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
             boxShadow: '0px 40px 90px -38px rgba(15, 23, 42, 0.55)',
             border: '1px solid rgba(226, 232, 240, 0.9)',
