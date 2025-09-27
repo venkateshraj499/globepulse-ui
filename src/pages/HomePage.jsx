@@ -41,10 +41,16 @@ const useStyles = makeStyles((theme) => ({
       fontSize: 13.5,
       lineHeight: 1.45,
       boxShadow: '0 18px 40px -24px rgba(15, 23, 42, 0.45)',
-      maxWidth: 220,
+      maxWidth: 260,
       pointerEvents: 'none',
       textAlign: 'left',
       border: '1px solid rgba(148, 163, 184, 0.25)',
+    },
+    '.globe-marker-tooltip.has-thumb': {
+      display: 'grid',
+      gridTemplateColumns: '48px 1fr',
+      gap: 12,
+      alignItems: 'center',
     },
     '.globe-marker-tooltip strong': {
       display: 'inline-flex',
@@ -55,6 +61,24 @@ const useStyles = makeStyles((theme) => ({
       color: '#FACC15',
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
+    },
+    '.globe-marker-tooltip .globe-tooltip-thumb': {
+      width: 48,
+      height: 48,
+      borderRadius: 12,
+      overflow: 'hidden',
+      boxShadow: '0 6px 14px -8px rgba(15, 23, 42, 0.5)',
+    },
+    '.globe-marker-tooltip .globe-tooltip-thumb img': {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      display: 'block',
+    },
+    '.globe-marker-tooltip .globe-tooltip-body': {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
     },
     '.globe-marker-tooltip span': {
       display: 'block',
@@ -404,11 +428,30 @@ const useStyles = makeStyles((theme) => ({
     border: '1px solid rgba(226, 232, 240, 0.8)',
     boxShadow: '0 26px 50px -34px rgba(15, 23, 42, 0.38)',
     textAlign: 'left',
+    display: 'flex',
+    gap: theme.spacing(1.8),
+    alignItems: 'stretch',
+  },
+  quickListContent: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1.2),
   },
   quickListHeader: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: theme.spacing(1.4),
+  },
+  quickThumbnail: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    objectFit: 'cover',
+    flexShrink: 0,
+    boxShadow: '0 18px 36px -26px rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#E2E8F0',
+    display: 'block',
   },
   quickIndex: {
     minWidth: 34,
@@ -479,6 +522,19 @@ const useStyles = makeStyles((theme) => ({
     color: '#475569',
     lineHeight: 1.5,
   },
+  dialogBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+  },
+  dialogThumbnail: {
+    width: '100%',
+    maxHeight: 220,
+    borderRadius: 16,
+    objectFit: 'cover',
+    boxShadow: '0 24px 48px -28px rgba(15, 23, 42, 0.4)',
+    backgroundColor: '#E2E8F0',
+  },
   dialogCityTag: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -499,14 +555,30 @@ const PRIMARY_MARKER_COLOR = '#F97316';
 const escapeTooltipText = (text) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const escapeAttribute = (value) =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
 const buildTooltipMarkup = (marker) => {
   const safeCity = escapeTooltipText(marker.city);
   const safeHeadline = escapeTooltipText(marker.headline);
+  const thumbnailUrl =
+    marker.thumbnailUrl ?? marker.thumbnail ?? marker.imageUrl ?? marker.image_url ?? null;
+  const thumbnailMarkup = thumbnailUrl
+    ? `<div class="globe-tooltip-thumb"><img src="${escapeAttribute(
+        thumbnailUrl
+      )}" alt="Thumbnail for ${safeCity}" loading="lazy" /></div>`
+    : '';
   const safeDescription = marker.description
     ? `<p>${escapeTooltipText(marker.description)}</p>`
     : '';
+  const rootClass = `globe-marker-tooltip${thumbnailMarkup ? ' has-thumb' : ''}`;
 
-  return `<div class="globe-marker-tooltip"><strong>📍 ${safeCity}</strong><span>${safeHeadline}</span>${safeDescription}</div>`;
+  return `<div class="${rootClass}">${thumbnailMarkup}<div class="globe-tooltip-body"><strong>📍 ${safeCity}</strong><span>${safeHeadline}</span>${safeDescription}</div></div>`;
 };
 
 const HomePage = () => {
@@ -911,6 +983,12 @@ const HomePage = () => {
   const selectedStoryCategoryLabel = selectedStory
     ? getCategoryLabel(selectedStory.category)
     : '';
+  const modalStoryThumbnail =
+    modalStory?.thumbnailUrl ??
+    modalStory?.thumbnail ??
+    modalStory?.imageUrl ??
+    modalStory?.image_url ??
+    null;
 
   return (
     <Box className={classes.root}>
@@ -1114,7 +1192,7 @@ const HomePage = () => {
         scroll="paper"
         PaperProps={{
           sx: {
-            borderRadius: 18,
+            borderRadius: 8,
             width: '100%',
             maxWidth: 760,
             background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 90%)',
@@ -1140,20 +1218,36 @@ const HomePage = () => {
             <Typography className={classes.quickErrorText}>{quickError}</Typography>
           ) : quickHeadlines.length ? (
             <Box className={classes.quickList}>
-              {quickHeadlines.map((story, index) => (
-                <Box key={story.id} className={classes.quickListItem}>
-                  <Box className={classes.quickListHeader}>
-                    <span className={classes.quickIndex}>{String(index + 1).padStart(2, '0')}</span>
-                    <Typography className={classes.quickHeadline}>{story.headline}</Typography>
+              {quickHeadlines.map((story, index) => {
+                const thumbnailUrl =
+                  story.thumbnailUrl ?? story.thumbnail ?? story.imageUrl ?? story.image_url ?? null;
+
+                return (
+                  <Box key={story.id} className={classes.quickListItem}>
+                    {thumbnailUrl && (
+                      <Box
+                        component="img"
+                        src={thumbnailUrl}
+                        alt={`${story.city} headline thumbnail`}
+                        loading="lazy"
+                        className={classes.quickThumbnail}
+                      />
+                    )}
+                    <Box className={classes.quickListContent}>
+                      <Box className={classes.quickListHeader}>
+                        <span className={classes.quickIndex}>{String(index + 1).padStart(2, '0')}</span>
+                        <Typography className={classes.quickHeadline}>{story.headline}</Typography>
+                      </Box>
+                      <Typography className={classes.quickMeta}>
+                        {story.city} · {getCategoryLabel(story.category)}
+                      </Typography>
+                      {story.description && (
+                        <Typography className={classes.quickDescription}>{story.description}</Typography>
+                      )}
+                    </Box>
                   </Box>
-                  <Typography className={classes.quickMeta}>
-                    {story.city} · {getCategoryLabel(story.category)}
-                  </Typography>
-                  {story.description && (
-                    <Typography className={classes.quickDescription}>{story.description}</Typography>
-                  )}
-                </Box>
-              ))}
+                );
+              })}
             </Box>
           ) : (
             <Typography className={classes.quickEmptyText}>
@@ -1179,7 +1273,7 @@ const HomePage = () => {
         onClose={() => setModalStory(null)}
         PaperProps={{
           sx: {
-            borderRadius: 16,
+            borderRadius: 8,
             padding: 2.5,
             maxWidth: 480,
             background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
@@ -1195,9 +1289,22 @@ const HomePage = () => {
               <Typography className={classes.dialogHeadline}>{modalStory.headline}</Typography>
             </DialogTitle>
             <DialogContent sx={{ paddingTop: 2 }}>
-              <Typography variant="body1" className={classes.dialogSubtext}>
-                {modalStory.description}
-              </Typography>
+              <Box className={classes.dialogBody}>
+                {modalStoryThumbnail && (
+                  <Box
+                    component="img"
+                    src={modalStoryThumbnail}
+                    alt={`${modalStory.city} headline thumbnail`}
+                    loading="lazy"
+                    className={classes.dialogThumbnail}
+                  />
+                )}
+                {modalStory.description && (
+                  <Typography variant="body1" className={classes.dialogSubtext}>
+                    {modalStory.description}
+                  </Typography>
+                )}
+              </Box>
             </DialogContent>
             <DialogActions sx={{ paddingTop: 1.5, justifyContent: 'flex-end' }}>
               <Button onClick={() => setModalStory(null)} variant="contained" disableElevation>
